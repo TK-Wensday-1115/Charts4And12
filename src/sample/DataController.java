@@ -1,7 +1,5 @@
 package sample;
 
-import javafx.scene.shape.Circle;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -11,10 +9,24 @@ import java.util.HashMap;
 public class DataController {
     private ArrayList<CircleData> circleDatas;
     private HashMap<String, Float> idToPercentValues;
+    private static DataController instance = null;
 
-    public DataController() {
+    protected DataController() {
         circleDatas = new ArrayList<>();
         idToPercentValues = new HashMap<>();
+
+        circleDatas.add(new CircleData("1", 1.0f));
+        circleDatas.add(new CircleData("2", 1.0f));
+        circleDatas.add(new CircleData("3", 1.0f));
+        circleDatas.add(new CircleData("4", 1.0f));
+        circleDatas.add(new CircleData("5", 1.0f));
+        circleDatas.add(new CircleData("6", 1.0f));
+    }
+    public static DataController getInstance() {
+        if(instance == null) {
+            instance = new DataController();
+        }
+        return instance;
     }
 
     public void addCircleData(String id, Float value) {
