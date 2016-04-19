@@ -1,26 +1,32 @@
 package sample;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * Created by Murzynas on 2016-04-18.
  */
 public class DataController {
-    private ArrayList<CircleData> circleDatas;
-    private HashMap<String, Float> idToPercentValues;
+    /**
+     * Variables used for Bubble Bandwidth Chart
+     */
+    private HashMap<String, CircleData> circlesDatasMap;
     private static DataController instance = null;
+    private Float summedCirclesValues;
+    public int uniqueId;
 
     protected DataController() {
-        circleDatas = new ArrayList<>();
-        idToPercentValues = new HashMap<>();
+        setCirclesDatasMap(new HashMap<String, CircleData>());
+        this.summedCirclesValues = 0f;
+        this.uniqueId = 0;
 
-        circleDatas.add(new CircleData("1", 1.0f));
-        circleDatas.add(new CircleData("2", 1.0f));
-        circleDatas.add(new CircleData("3", 1.0f));
-        circleDatas.add(new CircleData("4", 1.0f));
-        circleDatas.add(new CircleData("5", 1.0f));
-        circleDatas.add(new CircleData("6", 1.0f));
+//        for(int i=0; i<10; i++) {
+//            String circleId = String.valueOf(i);
+//            Float value = 15f;
+//            summedCirclesValues += value;
+////            Float percentValue = ( value * 100 )/summedCirclesValues;
+//            circlesDatasMap.put(circleId, new CircleData(circleId, 15f, 10f));
+//        }
+//
     }
     public static DataController getInstance() {
         if(instance == null) {
@@ -29,19 +35,30 @@ public class DataController {
         return instance;
     }
 
-    public void addCircleData(String id, Float value) {
-        circleDatas.add(new CircleData(id, value));
+    public static void setInstance(DataController instance) {
+        DataController.instance = instance;
     }
 
-    public void addIdToPercentValue(String s, Float f) {
-        this.idToPercentValues.put(s, f);
+
+    public void addNewCircleData(String id, Float value, Transition transition) {
+        addToSummedCirclesValue(value);
+        Float percentValue = ( value * 100 )/ getSummedCirclesValues();
+        getCirclesDatasMap().put(id, new CircleData(id, value, percentValue, transition));
     }
 
-    public ArrayList<CircleData> getCircleDatas() {
-        return circleDatas;
+    public HashMap<String, CircleData> getCirclesDatasMap() {
+        return circlesDatasMap;
     }
 
-    public HashMap<String, Float> getIdToPercentValues() {
-        return idToPercentValues;
+    public void setCirclesDatasMap(HashMap<String, CircleData> circlesDatasMap) {
+        this.circlesDatasMap = circlesDatasMap;
+    }
+
+    public Float getSummedCirclesValues() {
+        return summedCirclesValues;
+    }
+
+    public void addToSummedCirclesValue(Float addValue) {
+        this.summedCirclesValues += addValue;
     }
 }
