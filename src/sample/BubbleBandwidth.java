@@ -221,5 +221,6 @@ public class BubbleBandwidth extends Application {
 
     public static void main(final String[] args) {
         launch(args);
+
     }
 }
