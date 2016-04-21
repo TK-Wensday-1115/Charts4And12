@@ -19,8 +19,9 @@ public class Main {
         final TermometerPanel panel = new TermometerPanel();
 
         frame.getContentPane().add(panel, BorderLayout.CENTER);
-        frame.setSize(700, 450);
+        frame.setSize(700, 490);
         frame.setVisible(true);
+        frame.setResizable(false);
 
         final Thread thread = new Thread(new Runnable() {
             @Override
