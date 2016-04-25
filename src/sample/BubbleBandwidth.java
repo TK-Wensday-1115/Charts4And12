@@ -125,7 +125,7 @@ public class BubbleBandwidth extends Application {
                 }
             }
         });
-        scene.getChildren().add(addBtn);
+        canvas.getChildren().add(addBtn);
         addBtn.relocate(10, 10);
 
         final Timeline loop = new Timeline(new KeyFrame(Duration.millis(50), new EventHandler<ActionEvent>() {
