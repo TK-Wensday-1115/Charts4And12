@@ -17,6 +17,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -36,7 +38,8 @@ public class BubbleBandwidth extends Application {
 
     public HashMap<String, CircleData> cachedMap;
     public ArrayList<CircleData> circles = new ArrayList<>();
-    public static Pane canvas;
+    public static AnchorPane canvas;
+    public static Pane circlesPane;
     public final static DataController dataController = DataController.getInstance();
     public static Button addBtn;
     public static Button dltBtn;
@@ -67,15 +70,20 @@ public class BubbleBandwidth extends Application {
 
         transitionsIndex = 0;
         cachedMap = dataController.getCirclesDatasMap();
-        canvas = new Pane();
+        canvas = new AnchorPane();
+        circlesPane =  new Pane();
+        circlesPane.setMinHeight(CANVAS_HEIGHT);
+        circlesPane.setMinWidth(CANVAS_WIDTH-200);
+        circlesPane.getStylesheets().add("../src/sample/style.css");
+        circlesPane.getStyleClass().add("bordered-pane");
 
         final Scene scene = new Scene(canvas, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        canvas.setOnScroll(new EventHandler<ScrollEvent>() {
+        circlesPane.setOnScroll(new EventHandler<ScrollEvent>() {
             @Override public void handle(ScrollEvent event) {
                 event.consume();
 
-                if (event.getDeltaY() == 0 || (event.getDeltaY() < 0 && canvas.getScaleY() < 1.0)) {
+                if (event.getDeltaY() == 0 || (event.getDeltaY() < 0 && circlesPane.getScaleY() < 1.0)) {
                     return;
                 }
 
@@ -84,12 +92,12 @@ public class BubbleBandwidth extends Application {
                                 ? 1.1
                                 : 1/1.1;
 
-                canvas.setScaleX(canvas.getScaleX() * scaleFactor);
-                canvas.setScaleY(canvas.getScaleY() * scaleFactor);
+                circlesPane.setScaleX(circlesPane.getScaleX() * scaleFactor);
+                circlesPane.setScaleY(circlesPane.getScaleY() * scaleFactor);
             }
         });
 
-        canvas.setOnMousePressed(new EventHandler<MouseEvent>() {
+        circlesPane.setOnMousePressed(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
                 pressedX = event.getX();
@@ -97,11 +105,11 @@ public class BubbleBandwidth extends Application {
             }
         });
 
-        canvas.setOnMouseDragged(new EventHandler<MouseEvent>() {
+        circlesPane.setOnMouseDragged(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
-                canvas.setTranslateX(canvas.getTranslateX() + event.getX() - pressedX);
-                canvas.setTranslateY(canvas.getTranslateY() + event.getY() - pressedY);
+                circlesPane.setTranslateX(circlesPane.getTranslateX() + event.getX() - pressedX);
+                circlesPane.setTranslateY(circlesPane.getTranslateY() + event.getY() - pressedY);
                 event.consume();
             }
         });
@@ -126,14 +134,19 @@ public class BubbleBandwidth extends Application {
             }
         });
         canvas.getChildren().add(addBtn);
-        addBtn.relocate(10, 10);
+        canvas.getChildren().add(circlesPane);
+        AnchorPane.setRightAnchor(addBtn, 1d);
+        AnchorPane.setTopAnchor(addBtn, 1d);
+        AnchorPane.setLeftAnchor(circlesPane, 1d);
+        AnchorPane.setTopAnchor(circlesPane, 1d);
+//        addBtn.relocate(10, 10);
 
         final Timeline loop = new Timeline(new KeyFrame(Duration.millis(50), new EventHandler<ActionEvent>() {
 
             @Override
             public void handle(final ActionEvent t) {
                 if(updateNeeded) {
-                    canvas.getChildren().clear();
+                    circlesPane.getChildren().clear();
                     circles.clear();
                     Random generator = new Random();
                     HashMap<String, CircleData> circleDatas = dataController.getCirclesDatasMap();
@@ -176,12 +189,12 @@ public class BubbleBandwidth extends Application {
                         st.setByX(1.5f);
                         st.setByY(1.5f);
                         st.setCycleCount(1);
-                        canvas.getChildren().addAll(c); //,text
+                        circlesPane.getChildren().addAll(c); //,text
                         st.play();
                     }
                     updateNeeded = false;
-                    canvas.getChildren().add(addBtn);
-                    addBtn.relocate(10, 10);
+//                    canvas.getChildren().add(addBtn);
+//                    addBtn.relocate(10, 10);
                 }
 
                 for(CircleData c : circles) {

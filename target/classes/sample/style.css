@@ -10,3 +10,8 @@
 /*.chart-alternative-row-fill, .chart-alternative-column-fill{*/
     /*-fx-fill: #f5f5f5;*/
 /*}*/
+
+.bordered-pane {
+    -fx-border-color: black;
+    -fx-border-width: 2;
+}
