@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 /**
@@ -11,6 +12,7 @@ public class CircleData {
     private Float percentsValue;
     private Transition transition;
     private Circle circle;
+    private Color color;
 
     private int x;
     private int y;
@@ -83,5 +85,13 @@ public class CircleData {
 
     public void setCircle(Circle circle) {
         this.circle = circle;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
     }
 }

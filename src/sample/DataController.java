@@ -1,6 +1,12 @@
 package sample;
 
+import javafx.scene.paint.Color;
+
+import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by Murzynas on 2016-04-18.
@@ -13,6 +19,7 @@ public class DataController {
     private static DataController instance = null;
     private Float summedCirclesValues;
     public int uniqueId;
+    public Queue<Color> colorsQueue;
 
     protected DataController() {
         setCirclesDatasMap(new HashMap<String, CircleData>());
@@ -32,7 +39,32 @@ public class DataController {
         if(instance == null) {
             instance = new DataController();
         }
+
+        instance.fillColors();
         return instance;
+    }
+
+    public void fillColors() {
+        colorsQueue = new LinkedBlockingQueue<>();
+
+        Color color = Color.TRANSPARENT;
+        for(Field field : Color.class.getFields()) {
+            if(field.getType().equals(Color.class)) {
+                if(field.getName().equals("WHITE") || field.getName().equals("TRANSPARENT")) {
+                    continue;
+                }
+                try {
+                    Color colorValue = (Color) field.get(color);
+                    colorsQueue.add(colorValue);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private Color getNextColor() {
+        return colorsQueue.poll();
     }
 
     public static void setInstance(DataController instance) {
@@ -43,7 +75,12 @@ public class DataController {
     public void addNewCircleData(String id, Float value, Transition transition) {
         addToSummedCirclesValue(value);
         Float percentValue = ( value * 100 )/ getSummedCirclesValues();
-        getCirclesDatasMap().put(id, new CircleData(id, value, percentValue, transition));
+        CircleData newCD = new CircleData(id, value, percentValue, transition);
+        if(getNextColor() == null) {
+            fillColors();
+        }
+        newCD.setColor(getNextColor());
+        getCirclesDatasMap().put(id, newCD);
     }
 
     public HashMap<String, CircleData> getCirclesDatasMap() {

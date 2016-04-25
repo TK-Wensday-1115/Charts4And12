@@ -4,14 +4,19 @@ package sample;
  * Created by Murzynas on 2016-04-18.
  */
 
+import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 import javafx.animation.KeyFrame;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -37,11 +42,16 @@ public class BubbleBandwidth extends Application {
     public static Button dltBtn;
     private boolean updateNeeded;
 
-    private final static int CANVAS_WIDTH = 800;
-    private final static int CANVAS_HEIGHT = 600;
+    private final static int CANVAS_WIDTH = 1000;
+    private final static int CANVAS_HEIGHT = 1000;
 
     private ArrayList<Transition> transitions;
     private int transitionsIndex;
+
+    private double scaleFactor = 1.0;
+    private double pressedX;
+    private double pressedY;
+
 
     @Override
     public void start(final Stage primaryStage) {
@@ -58,10 +68,45 @@ public class BubbleBandwidth extends Application {
         transitionsIndex = 0;
         cachedMap = dataController.getCirclesDatasMap();
         canvas = new Pane();
+
         final Scene scene = new Scene(canvas, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+        canvas.setOnScroll(new EventHandler<ScrollEvent>() {
+            @Override public void handle(ScrollEvent event) {
+                event.consume();
 
-        primaryStage.setTitle("Circles");
+                if (event.getDeltaY() == 0 || (event.getDeltaY() < 0 && canvas.getScaleY() < 1.0)) {
+                    return;
+                }
+
+                scaleFactor =
+                        (event.getDeltaY() > 0)
+                                ? 1.1
+                                : 1/1.1;
+
+                canvas.setScaleX(canvas.getScaleX() * scaleFactor);
+                canvas.setScaleY(canvas.getScaleY() * scaleFactor);
+            }
+        });
+
+        canvas.setOnMousePressed(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                pressedX = event.getX();
+                pressedY = event.getY();
+            }
+        });
+
+        canvas.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                canvas.setTranslateX(canvas.getTranslateX() + event.getX() - pressedX);
+                canvas.setTranslateY(canvas.getTranslateY() + event.getY() - pressedY);
+                event.consume();
+            }
+        });
+
+        primaryStage.setTitle("Bubble Bandwidth");
         primaryStage.setScene(scene);
         primaryStage.show();
 
@@ -80,34 +125,8 @@ public class BubbleBandwidth extends Application {
                 }
             }
         });
-        canvas.getChildren().add(addBtn);
+        scene.getChildren().add(addBtn);
         addBtn.relocate(10, 10);
-
-//        dltBtn = new Button();
-//        dltBtn.setText("Add Circle");
-//        dltBtn.setOnAction(new EventHandler<ActionEvent>() {
-//            @Override
-//            public void handle(ActionEvent event) {
-//               dataController.addCircleData("x", 20.0f);
-//            }
-//        });
-//
-//        dltBtn.relocate(20, 20);
-
-
-//
-//        Rectangle rect = new Rectangle (100, 40, 100, 100);
-//        rect.setArcHeight(50);
-//        rect.setArcWidth(50);
-//        rect.setFill(Color.VIOLET);
-//
-//        ScaleTransition st = new ScaleTransition(Duration.millis(2000), rect);
-//        st.setByX(1.5f);
-//        st.setByY(1.5f);
-//        st.setCycleCount(1);
-//        //st.setAutoReverse(true);
-//        canvas.getChildren().add(rect);
-//        st.play();
 
         final Timeline loop = new Timeline(new KeyFrame(Duration.millis(50), new EventHandler<ActionEvent>() {
 
@@ -122,17 +141,31 @@ public class BubbleBandwidth extends Application {
 
                         CircleData cd = circleDatas.get(key);
                         cd.recalculatePercents(dataController.getSummedCirclesValues());
-                        Circle c = new Circle(cd.getPercentsValue(), Color.RED);
+
+//                        double overlapingSquareField = (cd.getPercentsValue()/100)*(CANVAS_HEIGHT*CANVAS_WIDTH*0.1);
+//                        double radius = Math.sqrt(overlapingSquareField)/2;
+//
+//                        System.out.println(overlapingSquareField);
+                        Circle c = new Circle(cd.getPercentsValue()*scaleFactor, cd.getColor());
+
+                        c.setStrokeWidth(1.0);
+                        c.setStroke(Color.BLACK);
                         cd.setCircle(c);
                         circles.add(cd);
                         c.setId(cd.getId());
+                        c.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                            @Override
+                            public void handle(MouseEvent mouseEvent) {
+                                Circle targetCircle = (Circle) mouseEvent.getTarget();
+                                CircleData circleData = dataController.getCirclesDatasMap().get(targetCircle.getId());
+                                System.out.println(circleData.getId()+" | "+circleData.getValue()+
+                                        " | "+circleData.getPercentsValue()+"%");
+                            }
+                        });
                         if(cd.getX() == -1 && cd.getY() == -1) {
-//                            cd.setX(generator.nextInt(CANVAS_WIDTH));
-//                            cd.setY(generator.nextInt(CANVAS_HEIGHT));
                             cd.setX(400);
                             cd.setY(300);
                         }
-//                        c.relocate(cd.getX(), cd.getY());
                         c.setCenterX(cd.getX());
                         c.setCenterY(cd.getY());
 //                        Text text = createText(cd.getId(),cd.getX(), cd.getY());
@@ -188,8 +221,6 @@ public class BubbleBandwidth extends Application {
         for (CircleData cd2 : circles) {
             Shape circle2 = cd2.getCircle();
             if (circle2 != circle1) {
-                circle2.setFill(Color.GREEN);
-
                 Shape intersect = Shape.intersect(circle1, circle2);
                 if (intersect.getBoundsInLocal().getWidth() != -1) {
                     Circle c1 = (Circle) circle1;
