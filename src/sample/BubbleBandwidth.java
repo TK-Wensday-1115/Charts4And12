@@ -4,29 +4,26 @@ package sample;
  * Created by Murzynas on 2016-04-18.
  */
 
-import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 import javafx.animation.KeyFrame;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBoundsType;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -40,10 +37,11 @@ public class BubbleBandwidth extends Application {
     public ArrayList<CircleData> circles = new ArrayList<>();
     public static AnchorPane canvas;
     public static Pane circlesPane;
-    public final static DataController dataController = DataController.getInstance();
+    public final static CircleDataController CIRCLE_DATA_CONTROLLER = CircleDataController.getInstance();
     public static Button addBtn;
     public static Button dltBtn;
     private boolean updateNeeded;
+    private String idToModify = "";
 
     private final static int CANVAS_WIDTH = 1000;
     private final static int CANVAS_HEIGHT = 1000;
@@ -69,7 +67,7 @@ public class BubbleBandwidth extends Application {
         transitions.add(new Transition(-5, 5)); //LEFT-UP
 
         transitionsIndex = 0;
-        cachedMap = dataController.getCirclesDatasMap();
+        cachedMap = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
         canvas = new AnchorPane();
         circlesPane =  new Pane();
         circlesPane.setMinHeight(CANVAS_HEIGHT);
@@ -124,8 +122,8 @@ public class BubbleBandwidth extends Application {
             @Override
             public void handle(ActionEvent event) {
                 Random generator = new Random();
-               dataController.addNewCircleData(String.valueOf(dataController.uniqueId++), (float)generator.nextInt(20), transitions.get(transitionsIndex));
-                cachedMap = dataController.getCirclesDatasMap();
+               CIRCLE_DATA_CONTROLLER.addNewCircleData(String.valueOf(CIRCLE_DATA_CONTROLLER.uniqueId++), (float)generator.nextInt(20), transitions.get(transitionsIndex));
+                cachedMap = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
                 updateNeeded = true;
                 transitionsIndex++;
                 if(transitionsIndex >= transitions.size()) {
@@ -133,13 +131,30 @@ public class BubbleBandwidth extends Application {
                 }
             }
         });
+
+        Button modifyBtn = new Button();
+        modifyBtn.setText("Modify Circle");
+        modifyBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                Random generator = new Random();
+                int circlesCount = circles.size();
+                    int i = generator.nextInt(circlesCount-1);
+                    String id = circles.get(i).getId();
+                    CIRCLE_DATA_CONTROLLER.modifyCircle(id, 4f);
+                    idToModify = id;
+            }
+        });
+
         canvas.getChildren().add(addBtn);
+        canvas.getChildren().add(modifyBtn);
         canvas.getChildren().add(circlesPane);
         AnchorPane.setRightAnchor(addBtn, 1d);
         AnchorPane.setTopAnchor(addBtn, 1d);
+        AnchorPane.setRightAnchor(modifyBtn, 1d);
+        AnchorPane.setTopAnchor(modifyBtn, 40d);
         AnchorPane.setLeftAnchor(circlesPane, 1d);
         AnchorPane.setTopAnchor(circlesPane, 1d);
-//        addBtn.relocate(10, 10);
 
         final Timeline loop = new Timeline(new KeyFrame(Duration.millis(50), new EventHandler<ActionEvent>() {
 
@@ -148,18 +163,17 @@ public class BubbleBandwidth extends Application {
                 if(updateNeeded) {
                     circlesPane.getChildren().clear();
                     circles.clear();
-                    Random generator = new Random();
-                    HashMap<String, CircleData> circleDatas = dataController.getCirclesDatasMap();
+                    HashMap<String, CircleData> circleDatas = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
                     for(String key : circleDatas.keySet()) {
 
                         CircleData cd = circleDatas.get(key);
-                        cd.recalculatePercents(dataController.getSummedCirclesValues());
+                        cd.recalculatePercents(CIRCLE_DATA_CONTROLLER.getSummedCirclesValues());
 
-//                        double overlapingSquareField = (cd.getPercentsValue()/100)*(CANVAS_HEIGHT*CANVAS_WIDTH*0.1);
-//                        double radius = Math.sqrt(overlapingSquareField)/2;
-//
-//                        System.out.println(overlapingSquareField);
                         Circle c = new Circle(cd.getPercentsValue()*scaleFactor, cd.getColor());
+                        Tooltip.install(
+                                c,
+                                createTooltip(cd)
+                        );
 
                         c.setStrokeWidth(1.0);
                         c.setStroke(Color.BLACK);
@@ -170,9 +184,12 @@ public class BubbleBandwidth extends Application {
                             @Override
                             public void handle(MouseEvent mouseEvent) {
                                 Circle targetCircle = (Circle) mouseEvent.getTarget();
-                                CircleData circleData = dataController.getCirclesDatasMap().get(targetCircle.getId());
+                                CircleData circleData = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap().get(targetCircle.getId());
                                 System.out.println(circleData.getId()+" | "+circleData.getValue()+
                                         " | "+circleData.getPercentsValue()+"%");
+//                                Text text = createText(circleData.getId()+" | "+circleData.getValue()+
+//                                        " | "+circleData.getPercentsValue()+"%",targetCircle.getCenterX(), targetCircle.getCenterY());
+//                                canvas.getChildren().add(text);
                             }
                         });
                         if(cd.getX() == -1 && cd.getY() == -1) {
@@ -181,52 +198,41 @@ public class BubbleBandwidth extends Application {
                         }
                         c.setCenterX(cd.getX());
                         c.setCenterY(cd.getY());
-//                        Text text = createText(cd.getId(),cd.getX(), cd.getY());
-//                        text.relocate(c.getCenterX(), c.getCenterY());
-//                        text.setTextAlignment(TextAlignment.CENTER);
 
-                        ScaleTransition st = new ScaleTransition(Duration.millis(1000), c);
-                        st.setByX(1.5f);
-                        st.setByY(1.5f);
-                        st.setCycleCount(1);
+//                        ScaleTransition st = new ScaleTransition(Duration.millis(1000), c);
+//                        st.setByX(1.5f);
+//                        st.setByY(1.5f);
+//                        st.setCycleCount(1);
                         circlesPane.getChildren().addAll(c); //,text
-                        st.play();
+                        //st.play();
                     }
                     updateNeeded = false;
-//                    canvas.getChildren().add(addBtn);
-//                    addBtn.relocate(10, 10);
+                } else if(!idToModify.isEmpty()) {
+
+
+
+
+                    idToModify = "";
                 }
 
                 for(CircleData c : circles) {
                     checkShapeIntersection(c);
                 }
 
-//                if(canvas.getChildren().get(0)!= null) {
-//                    Circle circle = (Circle) canvas.getChildren().get(0);
-//                    circle.setLayoutX(circle.getLayoutX() + 3);
-//                    circle.setLayoutY(circle.getLayoutY() + 3);
-//                }
-
-
-//                circle.setLayoutX(circle.getLayoutX() + deltaX);
-//                circle.setLayoutY(circle.getLayoutY() + deltaY);
-//                final Bounds bounds = canvas.getBoundsInLocal();
-//                final boolean atRightBorder = circle.getLayoutX() >= (bounds.getMaxX() - circle.getRadius());
-//                final boolean atLeftBorder = circle.getLayoutX() <= (bounds.getMinX() + circle.getRadius());
-//                final boolean atBottomBorder = circle.getLayoutY() >= (bounds.getMaxY() - circle.getRadius());
-//                final boolean atTopBorder = circle.getLayoutY() <= (bounds.getMinY() + circle.getRadius());
-//
-//                if (atRightBorder || atLeftBorder) {
-//                    deltaX *= -1;
-//                }
-//                if (atBottomBorder || atTopBorder) {
-//                    deltaY *= -1;
-//                }
             }
         }));
 
         loop.setCycleCount(Timeline.INDEFINITE);
         loop.play();
+    }
+
+    private Tooltip createTooltip(CircleData cd) {
+        Tooltip tooltip = new Tooltip("ID: "+cd.getId()+"\n"+
+                "VALUE: "+cd.getValue()+"\n"+
+                "PERCENTAGE: "+cd.getPercentsValue());
+        tooltip.setTextAlignment(TextAlignment.CENTER);
+
+        return tooltip;
     }
 
     private void checkShapeIntersection(CircleData cd1) {
