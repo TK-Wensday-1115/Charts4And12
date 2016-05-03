@@ -36,11 +36,49 @@ public class Main {
                         e.printStackTrace();
                     }
                     panel.setTemperature(random.nextDouble() * 200.0);
-                    panel2.setTemperature(random.nextDouble() * 200.0);
                 }
             }
         });
         thread.start();
+
+        final Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Random random = new Random();
+                while(true){
+                    try{
+                        Thread.sleep(random.nextInt(5000));
+                    } catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+                    panel2.setTemperature(random.nextDouble() * 100.0);
+                }
+            }
+        });
+        thread2.start();
+
+        final BubbleBandwidth bubbleBandwidth = new BubbleBandwidth();
+
+        final Thread thread3 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                bubbleBandwidth.startApplication();
+                Random random = new Random();
+                while(true){
+                    try{
+                        Thread.sleep(random.nextInt(5000));
+                    } catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+                    try {
+                        bubbleBandwidth.newData(String.valueOf(random.nextInt(20)), (float)((random.nextFloat() * 200.0) - 1.0));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        thread3.start();
 
     }
 

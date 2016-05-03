@@ -21,7 +21,6 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -61,6 +60,13 @@ public class BubbleBandwidth extends Application {
      */
     private boolean updateNeeded;
 
+    /**
+     * Method to start application explicitly. Need to be started before method newData(String, Float) is used.
+     */
+    public void startApplication(){
+        launch();
+    }
+
     @Override
     public void start(final Stage primaryStage) {
         circleDataController = new CircleDataController();
@@ -76,9 +82,9 @@ public class BubbleBandwidth extends Application {
 
         transitionsIndex = 0;
         canvas = new AnchorPane();
-        circlesPane =  new Pane();
+        circlesPane = new Pane();
         circlesPane.setMinHeight(CANVAS_HEIGHT);
-        circlesPane.setMinWidth(CANVAS_WIDTH-200);
+        circlesPane.setMinWidth(CANVAS_WIDTH - 200);
         circlesPane.getStyleClass().add("bordered-pane");
 
         final Scene scene = new Scene(canvas, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -186,13 +192,13 @@ public class BubbleBandwidth extends Application {
      */
     public void newData(String id, Float value) throws Exception {
         HashMap<String, CircleData> circlesMap = circleDataController.getCirclesDatasMap();
-        if(value <= 0) {
-            if(value == -1) {
+        if(value <= 0.0) {
+            if(value == -1.0) {
                 if(circlesMap.containsKey(id)) {
                     circleDataController.removeCircle(id);
                     updateNeeded = true;
                 } else {
-                    throw new Exception("Circle with given id="+id+" does not exist and so can't be deleted!");
+                    throw new Exception("Circle with given id=" + id + " does not exist and so can't be deleted!");
                 }
             } else {
                 throw new Exception("Invalid value! Value parameter must be either greater than 0 " +
@@ -259,7 +265,4 @@ public class BubbleBandwidth extends Application {
 
     }
 
-    public static void main(final String[] args) {
-        launch(args);
-    }
 }
