@@ -27,14 +27,15 @@ import java.util.HashMap;
 
 public class BubbleBandwidth extends Application {
 
+    /**
+     * Collection of current data of existing circles. Used for easier iteration over current CircleDatas.
+     */
     public ArrayList<CircleData> circles = new ArrayList<>();
     public static AnchorPane canvas;
     public static Pane circlesPane;
     public CircleDataController circleDataController;
-
     private final static int CANVAS_WIDTH = 800;
     private final static int CANVAS_HEIGHT = 800;
-
 
     /**
      * Variables used to determine which transition should be used for a circle being drawn right now.
