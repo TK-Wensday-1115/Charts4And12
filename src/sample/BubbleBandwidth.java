@@ -5,13 +5,11 @@ package sample;
  */
 
 import javafx.animation.KeyFrame;
-import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
@@ -20,40 +18,51 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
-import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
-import javafx.scene.text.TextBoundsType;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Random;
 
 public class BubbleBandwidth extends Application {
 
-    public HashMap<String, CircleData> cachedMap;
     public ArrayList<CircleData> circles = new ArrayList<>();
     public static AnchorPane canvas;
     public static Pane circlesPane;
-    public final static CircleDataController CIRCLE_DATA_CONTROLLER = CircleDataController.getInstance();
-    public static Button addBtn;
-    private boolean updateNeeded;
+    public CircleDataController circleDataController;
 
-    private final static int CANVAS_WIDTH = 1000;
-    private final static int CANVAS_HEIGHT = 1000;
+    private final static int CANVAS_WIDTH = 800;
+    private final static int CANVAS_HEIGHT = 800;
 
+
+    /**
+     * Variables used to determine which transition should be used for a circle being drawn right now.
+     */
     private ArrayList<Transition> transitions;
     private int transitionsIndex;
 
+    /**
+     * Variable used to determine current scale multiplier of the view.
+     */
     private double scaleFactor = 1.0;
+
+    /**
+     * Two variables used for dragging of the view.
+     */
     private double pressedX;
     private double pressedY;
 
+    /**
+     * Used to determine whether we need to update the view or not.
+     * Set to true every time a change in data occurs.
+     * Set to false when update was finished.
+     */
+    private boolean updateNeeded;
 
     @Override
     public void start(final Stage primaryStage) {
+        circleDataController = new CircleDataController();
         transitions = new ArrayList<>();
         transitions.add(new Transition(0, 1)); //UP
         transitions.add(new Transition(1, 1)); //RIGHT-UP
@@ -65,12 +74,10 @@ public class BubbleBandwidth extends Application {
         transitions.add(new Transition(-1, 1)); //LEFT-UP
 
         transitionsIndex = 0;
-        cachedMap = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
         canvas = new AnchorPane();
         circlesPane =  new Pane();
         circlesPane.setMinHeight(CANVAS_HEIGHT);
         circlesPane.setMinWidth(CANVAS_WIDTH-200);
-        circlesPane.getStylesheets().add("../src/sample/style.css");
         circlesPane.getStyleClass().add("bordered-pane");
 
         final Scene scene = new Scene(canvas, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -78,16 +85,11 @@ public class BubbleBandwidth extends Application {
         circlesPane.setOnScroll(new EventHandler<ScrollEvent>() {
             @Override public void handle(ScrollEvent event) {
                 event.consume();
-
                 if (event.getDeltaY() == 0 || (event.getDeltaY() < 0 && circlesPane.getScaleY() < 1.0)) {
                     return;
                 }
 
-                scaleFactor =
-                        (event.getDeltaY() > 0)
-                                ? 1.1
-                                : 1/1.1;
-
+                scaleFactor = (event.getDeltaY() > 0) ? 1.1 : 1/1.1;
                 circlesPane.setScaleX(circlesPane.getScaleX() * scaleFactor);
                 circlesPane.setScaleY(circlesPane.getScaleY() * scaleFactor);
             }
@@ -114,45 +116,7 @@ public class BubbleBandwidth extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        addBtn = new Button();
-        addBtn.setText("Add Circle");
-        addBtn.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                Random generator = new Random();
-                CIRCLE_DATA_CONTROLLER.addNewCircleData(String.valueOf(CIRCLE_DATA_CONTROLLER.uniqueId++), (float)generator.nextInt(20), transitions.get(transitionsIndex));
-                cachedMap = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
-                updateNeeded = true;
-                transitionsIndex++;
-                if(transitionsIndex >= transitions.size()) {
-                    transitionsIndex = 0;
-                }
-            }
-        });
-
-        Button modifyBtn = new Button();
-        modifyBtn.setText("Modify Circle");
-        modifyBtn.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                Random generator = new Random();
-                int circlesCount = circles.size();
-                int i = generator.nextInt(circlesCount-1);
-                String id = circles.get(i).getId();
-                CIRCLE_DATA_CONTROLLER.modifyCircle(id, 4f);
-                updateNeeded = true;
-            }
-        });
-
-        canvas.getChildren().add(addBtn);
-        canvas.getChildren().add(modifyBtn);
         canvas.getChildren().add(circlesPane);
-        AnchorPane.setRightAnchor(addBtn, 1d);
-        AnchorPane.setTopAnchor(addBtn, 1d);
-        AnchorPane.setRightAnchor(modifyBtn, 1d);
-        AnchorPane.setTopAnchor(modifyBtn, 40d);
-        AnchorPane.setLeftAnchor(circlesPane, 1d);
-        AnchorPane.setTopAnchor(circlesPane, 1d);
 
         final Timeline loop = new Timeline(new KeyFrame(Duration.millis(1), new EventHandler<ActionEvent>() {
 
@@ -162,11 +126,11 @@ public class BubbleBandwidth extends Application {
                     circlesPane.setVisible(false);
                     circlesPane.getChildren().clear();
                     circles.clear();
-                    HashMap<String, CircleData> circleDatas = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
+                    HashMap<String, CircleData> circleDatas = circleDataController.getCirclesDatasMap();
                     for(String key : circleDatas.keySet()) {
 
                         CircleData cd = circleDatas.get(key);
-                        cd.recalculatePercents(CIRCLE_DATA_CONTROLLER.getSummedCirclesValues());
+                        cd.recalculatePercents(circleDataController.getSummedCirclesValues());
 
                         Circle c = new Circle(cd.getPercentsValue()*scaleFactor, cd.getColor());
                         Tooltip.install(
@@ -183,12 +147,9 @@ public class BubbleBandwidth extends Application {
                             @Override
                             public void handle(MouseEvent mouseEvent) {
                                 Circle targetCircle = (Circle) mouseEvent.getTarget();
-                                CircleData circleData = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap().get(targetCircle.getId());
+                                CircleData circleData = circleDataController.getCirclesDatasMap().get(targetCircle.getId());
                                 System.out.println(circleData.getId()+" | "+circleData.getValue()+
                                         " | "+circleData.getPercentsValue()+"%");
-//                                Text text = createText(circleData.getId()+" | "+circleData.getValue()+
-//                                        " | "+circleData.getPercentsValue()+"%",targetCircle.getCenterX(), targetCircle.getCenterY());
-//                                canvas.getChildren().add(text);
                             }
                         });
                         if(cd.getX() == -1 && cd.getY() == -1) {
@@ -197,12 +158,8 @@ public class BubbleBandwidth extends Application {
                         }
                         c.setCenterX(cd.getX());
                         c.setCenterY(cd.getY());
-//                        ScaleTransition st = new ScaleTransition(Duration.millis(1000), c);
-//                        st.setByX(1.5f);
-//                        st.setByY(1.5f);
-//                        st.setCycleCount(1);
+
                         circlesPane.getChildren().addAll(c);
-//                        st.play();
                     }
                     updateNeeded = false;
                 }
@@ -218,6 +175,49 @@ public class BubbleBandwidth extends Application {
         loop.play();
     }
 
+    /**
+     * Used to operate on data concerning circles. This method will determine whether we must add a new circle,
+     * modify existing one or remove it.
+     * @param id - id of circle that we are going to add/modify/delete
+     * @param value - value for circle that will be modified/added
+     * @throws Exception - throws exception if given value is invalid or when value = -1 (points to removal operation)
+     * but id does not exists
+     */
+    public void newData(String id, Float value) throws Exception {
+        HashMap<String, CircleData> circlesMap = circleDataController.getCirclesDatasMap();
+        if(value <= 0) {
+            if(value == -1) {
+                if(circlesMap.containsKey(id)) {
+                    circleDataController.removeCircle(id);
+                    updateNeeded = true;
+                } else {
+                    throw new Exception("Circle with given id="+id+" does not exist and so can't be deleted!");
+                }
+            } else {
+                throw new Exception("Invalid value! Value parameter must be either greater than 0 " +
+                                    "(adding new circle or editing existing one) or equal to '-1'(deleting existing circle) !");
+            }
+        }
+
+        if(circlesMap.containsKey(id)) {
+            circleDataController.modifyExistingCirlce(id, value);
+        } else {
+            circleDataController.addNewCircle(id, value, transitions.get(transitionsIndex));
+            transitionsIndex++;
+            if(transitionsIndex >= transitions.size()) {
+                transitionsIndex = 0;
+            }
+        }
+
+        updateNeeded = true;
+    }
+
+    /**
+     * Creates tooltip for a given circle.
+     * It contains description of that circle: it's id, value and percentage value.
+     * @param cd - data of the circle we create tooltip for
+     * @return
+     */
     private Tooltip createTooltip(CircleData cd) {
         Tooltip tooltip = new Tooltip("ID: "+cd.getId()+"\n"+
                 "VALUE: "+cd.getValue()+"\n"+
@@ -227,6 +227,11 @@ public class BubbleBandwidth extends Application {
         return tooltip;
     }
 
+    /**
+     * Checks collisions between given circle and all other circles.
+     * If collision is detected then we move one with the smaller id away until it's not colliding anymore.
+     * @param cd1 - data of the circle we check collisions with
+     */
     private void checkShapeIntersection(CircleData cd1) {
         Shape circle1 = cd1.getCircle();
         for (CircleData cd2 : circles) {
@@ -253,18 +258,7 @@ public class BubbleBandwidth extends Application {
 
     }
 
-    private Text createText(String string, double x, double y) {
-        Text text = new Text(string);
-        text.setBoundsType(TextBoundsType.VISUAL);
-        text.setStyle(
-                "-fx-font-family: \"Times New Roman\";" +
-                        "-fx-font-style: italic;"
-        );
-        return text;
-    }
-
     public static void main(final String[] args) {
         launch(args);
-
     }
 }

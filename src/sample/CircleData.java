@@ -28,7 +28,6 @@ public class CircleData {
 
     public void recalculatePercents(Float maxValue) {
         this.percentsValue = (this.value * 100) / maxValue;
-//        this.percentsValue /= 2; //for visualization - smaller circles
     }
 
     public String getId() {

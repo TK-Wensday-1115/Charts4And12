@@ -9,84 +9,90 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by Murzynas on 2016-04-18.
+ * Class used to keep and modify  any data concerning currently shown circles.
+ * There we can add, delete and modify data.
  */
 public class CircleDataController {
     /**
-     * Variables used for Bubble Bandwidth Chart
+     * Map used to keep current state of circles.
+     * Key - circle id
+     * Value - CircleData - an object keeping all data we need to know about that circle
      */
     private HashMap<String, CircleData> circlesDatasMap;
-    private static CircleDataController instance = null;
+
+    /**
+     * Sum of all numeric values in circles (CircleData's 'value' field).
+     * Needed to count the percentage values of circles.
+     */
     private Float summedCirclesValues;
+
+    /**
+     * Unique id that will be given to next added circle, incremented every time we add new circle.
+     */
     public int uniqueId;
+
+    /**
+     * Collection that keeps our colors in concrete order.
+     * Used to give unique color to every new circle.
+     */
     public Queue<Color> colorsQueue;
 
-    protected CircleDataController() {
+
+
+    public CircleDataController() {
         setCirclesDatasMap(new HashMap<String, CircleData>());
+        fillColors();
         this.summedCirclesValues = 0f;
         this.uniqueId = 0;
-
-//        for(int i=0; i<10; i++) {
-//            String circleId = String.valueOf(i);
-//            Float value = 15f;
-//            summedCirclesValues += value;
-////            Float percentValue = ( value * 100 )/summedCirclesValues;
-//            circlesDatasMap.put(circleId, new CircleData(circleId, 15f, 10f));
-//        }
-//
-    }
-    public static CircleDataController getInstance() {
-        if(instance == null) {
-            instance = new CircleDataController();
-        }
-
-        instance.fillColors();
-        return instance;
     }
 
+    /**
+     * Prepares colorsQueue by filling it with all possible colors.
+     * Skips TRANSPARENT and WHITE colors.
+     */
     public void fillColors() {
         colorsQueue = new LinkedBlockingQueue<>();
 
         Color color = Color.TRANSPARENT;
         for(Field field : Color.class.getFields()) {
             if(field.getType().equals(Color.class)) {
-                if(field.getName().equals("WHITE") || field.getName().equals("TRANSPARENT")) {
-                    continue;
-                }
-                try {
-                    Color colorValue = (Color) field.get(color);
-                    colorsQueue.add(colorValue);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                if(!field.getName().equals("WHITE") && !field.getName().equals("TRANSPARENT")) {
+                    try {
+                        Color colorValue = (Color) field.get(color);
+                        colorsQueue.add(colorValue);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
     }
 
+    /**
+     * Deques next color from colorsQueue and uses it in new circle.
+     * @return color to be used in new circle.
+     */
     private Color getNextColor() {
         return colorsQueue.poll();
     }
 
-    public static void setInstance(CircleDataController instance) {
-        CircleDataController.instance = instance;
-    }
-
-
-    public void addNewCircleData(String id, Float value, Transition transition) {
+    public void addNewCircle(String id, Float value, Transition transition) {
         addToSummedCirclesValue(value);
-        Float percentValue = ( value * 100 )/ getSummedCirclesValues();
+        Float percentValue = ( value * 100 )/ summedCirclesValues;
         CircleData newCD = new CircleData(id, value, percentValue, transition);
-        if(getNextColor() == null) {
-            fillColors();
-        }
+
         newCD.setColor(getNextColor());
-        getCirclesDatasMap().put(id, newCD);
+        circlesDatasMap.put(id, newCD);
     }
 
-    public void modifyCircle(String id, Float value) {
-        System.out.println(id+" ---- "+value);
-        this.circlesDatasMap.get(id).setValue(value);
-        this.circlesDatasMap.get(id).recalculatePercents(getSummedCirclesValues());
+    public void removeCircle(String id) {
+        circlesDatasMap.remove(id);
+    }
 
+    public void modifyExistingCirlce(String id, float value) {
+        CircleData cd = circlesDatasMap.get(id);
+        cd.setValue(value);
+        cd.recalculatePercents(summedCirclesValues);
     }
 
     public HashMap<String, CircleData> getCirclesDatasMap() {
@@ -104,4 +110,5 @@ public class CircleDataController {
     public void addToSummedCirclesValue(Float addValue) {
         this.summedCirclesValues += addValue;
     }
+
 }
