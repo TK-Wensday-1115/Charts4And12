@@ -39,9 +39,7 @@ public class BubbleBandwidth extends Application {
     public static Pane circlesPane;
     public final static CircleDataController CIRCLE_DATA_CONTROLLER = CircleDataController.getInstance();
     public static Button addBtn;
-    public static Button dltBtn;
     private boolean updateNeeded;
-    private String idToModify = "";
 
     private final static int CANVAS_WIDTH = 1000;
     private final static int CANVAS_HEIGHT = 1000;
@@ -57,14 +55,14 @@ public class BubbleBandwidth extends Application {
     @Override
     public void start(final Stage primaryStage) {
         transitions = new ArrayList<>();
-        transitions.add(new Transition(0, 5)); //UP
-        transitions.add(new Transition(5, 5)); //RIGHT-UP
-        transitions.add(new Transition(5, 0));  //RIGHT
-        transitions.add(new Transition(5, -5)); //RIGHT-DOWN
-        transitions.add(new Transition(0, -5)); //DOWN
-        transitions.add(new Transition(-5, -5)); //LEFT-DOWN
-        transitions.add(new Transition(-5, 0)); //LEFT
-        transitions.add(new Transition(-5, 5)); //LEFT-UP
+        transitions.add(new Transition(0, 1)); //UP
+        transitions.add(new Transition(1, 1)); //RIGHT-UP
+        transitions.add(new Transition(1, 0));  //RIGHT
+        transitions.add(new Transition(1, -1)); //RIGHT-DOWN
+        transitions.add(new Transition(0, -1)); //DOWN
+        transitions.add(new Transition(-1, -1)); //LEFT-DOWN
+        transitions.add(new Transition(-1, 0)); //LEFT
+        transitions.add(new Transition(-1, 1)); //LEFT-UP
 
         transitionsIndex = 0;
         cachedMap = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
@@ -122,7 +120,7 @@ public class BubbleBandwidth extends Application {
             @Override
             public void handle(ActionEvent event) {
                 Random generator = new Random();
-               CIRCLE_DATA_CONTROLLER.addNewCircleData(String.valueOf(CIRCLE_DATA_CONTROLLER.uniqueId++), (float)generator.nextInt(20), transitions.get(transitionsIndex));
+                CIRCLE_DATA_CONTROLLER.addNewCircleData(String.valueOf(CIRCLE_DATA_CONTROLLER.uniqueId++), (float)generator.nextInt(20), transitions.get(transitionsIndex));
                 cachedMap = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
                 updateNeeded = true;
                 transitionsIndex++;
@@ -139,10 +137,10 @@ public class BubbleBandwidth extends Application {
             public void handle(ActionEvent event) {
                 Random generator = new Random();
                 int circlesCount = circles.size();
-                    int i = generator.nextInt(circlesCount-1);
-                    String id = circles.get(i).getId();
-                    CIRCLE_DATA_CONTROLLER.modifyCircle(id, 4f);
-                    idToModify = id;
+                int i = generator.nextInt(circlesCount-1);
+                String id = circles.get(i).getId();
+                CIRCLE_DATA_CONTROLLER.modifyCircle(id, 4f);
+                updateNeeded = true;
             }
         });
 
@@ -156,11 +154,12 @@ public class BubbleBandwidth extends Application {
         AnchorPane.setLeftAnchor(circlesPane, 1d);
         AnchorPane.setTopAnchor(circlesPane, 1d);
 
-        final Timeline loop = new Timeline(new KeyFrame(Duration.millis(50), new EventHandler<ActionEvent>() {
+        final Timeline loop = new Timeline(new KeyFrame(Duration.millis(1), new EventHandler<ActionEvent>() {
 
             @Override
             public void handle(final ActionEvent t) {
                 if(updateNeeded) {
+                    circlesPane.setVisible(false);
                     circlesPane.getChildren().clear();
                     circles.clear();
                     HashMap<String, CircleData> circleDatas = CIRCLE_DATA_CONTROLLER.getCirclesDatasMap();
@@ -198,27 +197,20 @@ public class BubbleBandwidth extends Application {
                         }
                         c.setCenterX(cd.getX());
                         c.setCenterY(cd.getY());
-
 //                        ScaleTransition st = new ScaleTransition(Duration.millis(1000), c);
 //                        st.setByX(1.5f);
 //                        st.setByY(1.5f);
 //                        st.setCycleCount(1);
-                        circlesPane.getChildren().addAll(c); //,text
-                        //st.play();
+                        circlesPane.getChildren().addAll(c);
+//                        st.play();
                     }
                     updateNeeded = false;
-                } else if(!idToModify.isEmpty()) {
-
-
-
-
-                    idToModify = "";
                 }
 
                 for(CircleData c : circles) {
                     checkShapeIntersection(c);
                 }
-
+                circlesPane.setVisible(true);
             }
         }));
 
@@ -239,11 +231,13 @@ public class BubbleBandwidth extends Application {
         Shape circle1 = cd1.getCircle();
         for (CircleData cd2 : circles) {
             Shape circle2 = cd2.getCircle();
-            if (circle2 != circle1) {
-                Shape intersect = Shape.intersect(circle1, circle2);
-                if (intersect.getBoundsInLocal().getWidth() != -1) {
-                    Circle c1 = (Circle) circle1;
-                    Circle c2 = (Circle) circle2;
+            if (!circle2.equals(circle1)) {
+                boolean intersect = circle1.getBoundsInParent().intersects(circle2.getBoundsInParent());
+
+                Circle c1 = (Circle) circle1;
+                Circle c2 = (Circle) circle2;
+                while(intersect){
+                    intersect = circle1.getBoundsInParent().intersects(circle2.getBoundsInParent());
                     if(Integer.parseInt(c1.getId()) < Integer.parseInt(c2.getId())) {
                         Transition transition = cd2.getTransition();
                         circle2.setLayoutX(circle2.getLayoutX()+ transition.x);
