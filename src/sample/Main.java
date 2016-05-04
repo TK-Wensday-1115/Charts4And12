@@ -63,6 +63,13 @@ public class Main {
             @Override
             public void run() {
                 bubbleBandwidth.startApplication();
+            }
+        });
+        thread3.start();
+
+        final Thread thread4 = new Thread(new Runnable() {
+            @Override
+            public void run() {
                 Random random = new Random();
                 while(true){
                     try{
@@ -71,14 +78,16 @@ public class Main {
                         e.printStackTrace();
                     }
                     try {
-                        bubbleBandwidth.newData(String.valueOf(random.nextInt(20)), (float)((random.nextFloat() * 200.0) - 1.0));
+                        String id = String.valueOf(random.nextInt(20));
+                        float value = (float)((random.nextFloat() * 200.0) + 1.0);
+                        bubbleBandwidth.newData(id, value);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             }
         });
-        thread3.start();
+        thread4.start();
 
     }
 

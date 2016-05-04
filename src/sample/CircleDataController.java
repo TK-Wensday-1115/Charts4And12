@@ -37,6 +37,7 @@ public class CircleDataController {
      */
     public Queue<Color> colorsQueue;
 
+    private boolean updateNeeded;
 
 
     public CircleDataController() {
@@ -83,16 +84,19 @@ public class CircleDataController {
 
         newCD.setColor(getNextColor());
         circlesDatasMap.put(id, newCD);
+        this.updateNeeded = true;
     }
 
     public void removeCircle(String id) {
         circlesDatasMap.remove(id);
+        this.updateNeeded = true;
     }
 
     public void modifyExistingCirlce(String id, float value) {
         CircleData cd = circlesDatasMap.get(id);
         cd.setValue(value);
         cd.recalculatePercents(summedCirclesValues);
+        this.updateNeeded = true;
     }
 
     public HashMap<String, CircleData> getCirclesDatasMap() {
@@ -111,4 +115,16 @@ public class CircleDataController {
         this.summedCirclesValues += addValue;
     }
 
+    /**
+     * Used to determine whether we need to update the view or not.
+     * Set to true every time a change in data occurs.
+     * Set to false when update was finished.
+     */
+    public boolean isUpdateNeeded() {
+        return updateNeeded;
+    }
+
+    public void setUpdateNeeded(boolean updateNeeded) {
+        this.updateNeeded = updateNeeded;
+    }
 }
